@@ -1,5 +1,7 @@
-const { Schema, model } = require("mongoose");
-const Joi = require("joi");
+const { Schema, model } = require("mongoose")
+const Joi = require("joi")
+
+const { handleMongooseError } = require("../helpers")
 
 const contactSchema = new Schema(
   {
@@ -21,7 +23,6 @@ const contactSchema = new Schema(
       type: String,
       trim: true,
       required: true,
-      match: /^(\()?\d{3}(\))?(-|\s)?\d{3}(-|\s)\d{4}$/,
     },
     favorite: {
       type: Boolean,
@@ -29,20 +30,25 @@ const contactSchema = new Schema(
       lowercase: true,
       default: false,
     },
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: "user",
+    },
   },
   { versionKey: false }
-);
+)
 
-const Contact = model("contact", contactSchema);
+contactSchema.post("save", handleMongooseError)
 
 const joiSchema = Joi.object({
   name: Joi.string().required(),
   email: Joi.string().required(),
   phone: Joi.string().required(),
   favorite: Joi.boolean().required(),
-});
+})
 
+const Contact = model("contact", contactSchema)
 module.exports = {
   Contact,
   joiSchema,
-};
+}

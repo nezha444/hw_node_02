@@ -1,36 +1,70 @@
-const { Contact } = require("../models/contact");
+const { Contact } = require("../models/contact")
 
-const listContacts = async () => {
-  const contacts = await Contact.find();
+const listContacts = async (req, res, next) => {
+  try {
+    const { _id: owner } = req.user
+    const contacts = await Contact.find({ owner }).populate(
+      "owner",
+      "email subscription"
+    )
+    if (!contacts) throw HttpError(404, "Not found")
+    res.status(200).json(contacts)
+  } catch (error) {
+    next(error)
+  }
+}
 
-  return contacts;
-};
+const getContactById = async (req, res, next) => {
+  try {
+    const { _id: owner } = req.user
+    const contact = await Contact.findById(req.params.contactId)
+    if (!contact) throw HttpError(404, "Not found")
+    res.status(200).json(contact)
+  } catch (error) {
+    next(error)
+  }
+}
 
-const getContactById = async (contactId) => {
-  const contact = await Contact.findById(contactId);
-  return contact;
-};
+const addContact = async (req, res, next) => {
+  try {
+    const { _id: owner } = req.user
+    const contact = await Contact.create({ ...req.body, owner })
+    if (!contact) throw HttpError(400, "missing required name field")
+    res.status(201).json(contact)
+  } catch (error) {
+    next(error)
+  }
+}
 
-const addContact = async (body) => {
-  const contact = await Contact.create(body);
+const removeContact = async (req, res, next) => {
+  try {
+    const contact = await Contact.findByIdAndRemove(req.params.contactId)
+    if (!contact) throw HttpError(404, "Not found")
+    res.status(200).json({ message: "contact deleted" })
+  } catch (error) {
+    next(error)
+  }
+}
 
-  return contact;
-};
+const updateContact = async (req, res, next) => {
+  try {
+    const updContact = await Contact.findByIdAndUpdate(
+      req.params.contactId,
+      req.body,
+      { new: true }
+    )
 
-const removeContact = async (contactId) => {
-  const contact = await Contact.findByIdAndRemove(contactId);
-  return contact;
-};
-
-const updateContact = async (contactId, body) => {
-  const updContact = Contact.findByIdAndUpdate(contactId, body, { new: true });
-  return updContact;
-};
+    if (!updContact) throw HttpError(404, "Not found")
+    res.status(200).json(updContact)
+  } catch (error) {
+    next(error)
+  }
+}
 
 module.exports = {
-  removeContact,
-  addContact,
-  getContactById,
   listContacts,
+  getContactById,
+  addContact,
+  removeContact,
   updateContact,
-};
+}
