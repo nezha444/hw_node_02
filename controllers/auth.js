@@ -6,6 +6,8 @@ const { HttpError } = require("../helpers")
 const gravatar = require("gravatar")
 const fs = require("fs/promises")
 const path = require("path")
+const Jimp = require("jimp")
+const { nextTick } = require("process")
 const pathAvatar = path.join(__dirname, "../", "public", "avatar")
 
 const registerUser = async (req, res, next) => {
@@ -51,9 +53,7 @@ const loginUser = async (req, res, next) => {
     const token = await jwt.sign(payload, SECRET_KEY, { expiresIn: "24h" })
     await User.findByIdAndUpdate(user._id, { token })
 
-    res
-      .status(201)
-      .json({ token, user: { email, subscription: user.subscription } })
+    res.status(201).json({ token, user: { email, subscription: user.subscription } })
   } catch (error) {
     next(error)
   }
@@ -72,16 +72,26 @@ const logoutUser = async (req, res, next) => {
   })
 }
 
-const updAvatar = async (req, res) => {
+const updAvatar = async (req, res, next) => {
   const { _id } = req.user
   const oldPath = req.file.path
-  const name = req.file.orinalname
+  const name = req.file.originalname
+
+  await Jimp.read(oldPath)
+    .then((img) => {
+      img.resize(250, 250) // resize
+      img.writeAsync(oldPath)
+    })
+    .catch((err) => {
+      next(err)
+    })
+
   const newName = `${_id}_${name}`
   const newPath = path.join(pathAvatar, newName)
   await fs.rename(oldPath, newPath)
-  const avatar = path.join("avatar", newName)
-  await User.findByIdAndUpdate(_id, { avatar })
-  res.join({ avatar })
+  const avatarURL = path.join("avatar", newName)
+  await User.findByIdAndUpdate(_id, { avatarURL })
+  res.join({ avatarURL: avatar })
 }
 
 module.exports = {
@@ -89,4 +99,5 @@ module.exports = {
   loginUser,
   getCurrent,
   logoutUser,
+  updAvatar,
 }
