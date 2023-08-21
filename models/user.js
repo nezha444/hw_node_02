@@ -30,6 +30,14 @@ const userSchema = new Schema(
     avatarURL: {
       type: String,
     },
+    veryfi: {
+      type: Boolean,
+      default: false,
+    },
+    verificationCode: {
+      type: String,
+      default: "",
+    },
   },
   { versionKey: false }
 )
