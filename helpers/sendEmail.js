@@ -7,7 +7,7 @@ const nodemailerConfig = {
   host: "smtp.meta.ua",
   port: 465,
   secure: true,
-  ayth: {
+  auth: {
     user: "webnezha@meta.ua",
     pass: META_PASSWORD,
   },
